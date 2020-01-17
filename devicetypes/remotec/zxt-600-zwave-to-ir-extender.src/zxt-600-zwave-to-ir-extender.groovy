@@ -145,7 +145,7 @@ metadata {
         // The currently detected temperature.  Show this as a large tile, changing colors as an indiciation
         // of the temperature
         valueTile("temperature", "device.temperature") {
-            state("temperature", label:'${currentValue}°', unit: "C", 
+            state("temperature", label:'${currentValue}°', unit: "F", 
                     backgroundColors:[
                             [value: 0, color: "#153591"],
                             [value: 6, color: "#1e9cbb"],
@@ -220,18 +220,18 @@ metadata {
 
 		// Report of COOL and HEAT
         valueTile("reportedCoolingSetpoint", "device.reportedCoolingSetpoint", height: 1, width: 1, inactiveLabel: true, decoration: "flat") {
-            state "reportedCoolingSetpoint", label:'${currentValue}° cool', unit:"C", backgroundColor:"#ffffff"
+            state "reportedCoolingSetpoint", label:'${currentValue}° cool', unit:"F", backgroundColor:"#ffffff"
         }
         valueTile("reportedHeatingSetpoint", "device.reportedHeatingSetpoint", height: 1, width: 1, inactiveLabel: true, decoration: "flat") {
-            state "reportedHeatingSetpoint", label:'${currentValue}° heat', unit:"C", backgroundColor:"#ffffff"
+            state "reportedHeatingSetpoint", label:'${currentValue}° heat', unit:"F", backgroundColor:"#ffffff"
         }
         
         // Icon to trigger seekbar
         valueTile("heatingSetpoint", "device.heatingSetpoint", height: 1, width: 1, inactiveLabel: false, decoration: "flat") {
-            state "heatingSetpoint", label:'${currentValue}° heat', unit:"C", backgroundColor:"#ffffff"
+            state "heatingSetpoint", label:'${currentValue}° heat', unit:"F", backgroundColor:"#ffffff"
         }
         valueTile("coolingSetpoint", "device.coolingSetpoint", height: 1, width: 1, inactiveLabel: false, decoration: "flat") {
-            state "coolingSetpoint", label:'${currentValue}° cool', unit:"C", backgroundColor:"#ffffff"
+            state "coolingSetpoint", label:'${currentValue}° cool', unit:"F", backgroundColor:"#ffffff"
         }
         
         // seekbar for temperature 
@@ -244,10 +244,10 @@ metadata {
             state "setCoolingSetpoint", action:"thermostat.setCoolingSetpoint", backgroundColor: "#1e9cbb"
         }*/
 
-        controlTile("heatSliderControlC", "device.heatingSetpoint", "slider", height: 1, width: 1, inactiveLabel: false, range:"(19..28)") {
+        controlTile("heatSliderControl", "device.heatingSetpoint", "slider", height: 1, width: 1, inactiveLabel: false, range:"(67..84)") {
             state "setHeatingSetpoint", action:"thermostat.setHeatingSetpoint", backgroundColor: "#d04e00"
         }
-        controlTile("coolSliderControlC", "device.coolingSetpoint", "slider", height: 1, width: 1, inactiveLabel: false, range:"(19..28)") {
+        controlTile("coolSliderControl", "device.coolingSetpoint", "slider", height: 1, width: 1, inactiveLabel: false, range:"(67..84)") {
             state "setCoolingSetpoint", action:"thermostat.setCoolingSetpoint", backgroundColor: "#1e9cbb"
         }
  
@@ -345,11 +345,9 @@ metadata {
                  "thermostatMode", "fanMode", "swingMode",
                  "off", "dry", 
                  //"coolingSetpoint" tile no longer needed because new slider displays current value
-                 // change "coolSliderControl" to "coolSliderControlC" for Celsius
-                 "cool", "coolSliderControlC", "reportedCoolingSetpointC", 
+                 "cool", "coolSliderControl", "reportedCoolingSetpoint", 
                  //"heatingSetpoint", 
-                 // change "heatSliderControl" to "heatSliderControlC" for Celsius
-                 "heat", "heatSliderControlC", "reportedHeatingSetpointC",
+                 "heat", "heatSliderControl", "reportedHeatingSetpoint",
                  "fanModeLow","fanModeMed","fanModeHigh", 
                  "fanModeAuto", "swingModeOn", "swingModeOff",
                  // SmartThings changed their slider to include the value so learningPosition
@@ -515,7 +513,7 @@ def zwaveEvent(physicalgraph.zwave.commands.sensormultilevelv1.SensorMultilevelR
             log.debug "cmd.scaledSensorValue=$cmd.scaledSensorValue"
             // converTemp returns string with two decimal places
             // convert to double then to int to drop the decimal
-            Integer temp = (int) convertTempValueToCelsius(cmdScale, cmd.scaledSensorValue) //(int) convertTemperatureIfNeeded(cmd.scaledSensorValue, cmdScale).toDouble()
+            Integer temp = (int) cmd.scaledSensorValue
             map.value = temp
             map.unit = getTemperatureScale()
             map.name = "temperature"
@@ -525,8 +523,8 @@ def zwaveEvent(physicalgraph.zwave.commands.sensormultilevelv1.SensorMultilevelR
             log.debug "Sensor Reporting temperatureName $tempName map.value=$map.value, cmdScale=$cmdScale"
             sendEvent("name":"temperatureName", "value":tempName)
             // Pass value converted to Fahrenheit and Unit of 1 which means Fahrenheit
-            sendEvent("name":"temperature", "value":map.value, "isStateChange":true, unit:"C", displayed:true)
-            //sendEvent("name":"temperature", "value":map.value, "isStateChange":true, displayed:true)
+            //sendEvent("name":"temperature", "value":map.value, "isStateChange":true, unit:"C", displayed:true)
+            sendEvent("name":"temperature", "value":map.value, "isStateChange":true, displayed:true)
             break;
         default:
             log.warn "Unknown sensorType reading from device"
@@ -759,7 +757,7 @@ def lastPoll() {
 
 def setHeatingSetpoint(degrees) {
     def degreesInteger = degrees as Integer
-    def temperatureScale = "C"
+    def temperatureScale = "F"
 
     if (temperatureScale == "C") {
         // ZXT-600 lowest settings is 19 C
@@ -781,7 +779,7 @@ def setHeatingSetpoint(degrees) {
         }
     }
     log.debug "setHeatingSetpoint({$degreesInteger} ${temperatureScale})"
-    sendEvent("name":"heatingSetpoint", "value":degreesInteger, unit: "C")
+    sendEvent("name":"heatingSetpoint", "value":degreesInteger, unit: "F")
     setThermostatMode("heat")
     //def celsius = (temperatureScale == "C") ? degreesInteger : (fahrenheitToCelsius(degreesInteger) as Double).round(2)
     //"st wattr 0x${device.deviceNetworkId} 1 0x201 0x12 0x29 {" + hex(celsius*100) + "}"
@@ -791,7 +789,7 @@ def setHeatingSetpoint(degrees) {
 
 def setCoolingSetpoint(degrees) {
     def degreesInteger = degrees as Integer
-    def temperatureScale = "C"
+    def temperatureScale = "F"
 
     if (temperatureScale == "C") {
         // ZXT-600 lowest settings is 19 C
@@ -813,7 +811,7 @@ def setCoolingSetpoint(degrees) {
         }
     }
     log.debug "setCoolingSetpoint({$degreesInteger} ${temperatureScale})"
-    sendEvent("name":"coolingSetpoint", "value":degreesInteger, unit: "C")
+    sendEvent("name":"coolingSetpoint", "value":degreesInteger, unit: "F")
     setThermostatMode("cool")
     // Sending temp to zxt-600
     //def celsius = (temperatureScale == "C") ? degreesInteger : (fahrenheitToCelsius(degreesInteger) as Double).round(2)
@@ -1047,7 +1045,6 @@ def zwaveEvent(physicalgraph.zwave.commands.thermostatsetpointv2.ThermostatSetpo
     //       Maybe I should lie to user and report current set temp rather than reported temp
     //       to avoid confusion and false bug reports....needs to be considered.
     def degrees = cmd.scaledValue
-    def reportedTemp = convertTempValueToCelsius(deviceScaleString, degrees)
     
     // Determine what mode the setpoint is for, if the mode is not valid, bail out
     def name = setpointReportingMap.find {it.value == cmd.setpointType}?.key
@@ -1057,8 +1054,8 @@ def zwaveEvent(physicalgraph.zwave.commands.thermostatsetpointv2.ThermostatSetpo
     }
      
     // Return the interpretation of the report
-    log.debug "Thermostat Setpoint Report for $name = $reportedTemp forcing state change true"
-    sendEvent("name":name, "value":reportedTemp, "isStateChange":true, "unit": "C")
+    log.debug "Thermostat Setpoint Report for $name = $degrees forcing state change true"
+    sendEvent("name":name, "value":degrees, "isStateChange":true, "unit": "F")
 }
 
 // Set Thermostat Mode
@@ -1086,7 +1083,7 @@ def setThermostatMode(String value) {
     // Send temp if degrees set
     if (degrees != 0 && setpointMode != null) {
         def deviceScale = 0
-        def deviceScaleString = "C"
+        def deviceScaleString = "F"
         log.debug "state.scale = ${state.scale}"
 //        if(state.scale){
 //            deviceScale = state.scale ?: 1
@@ -1097,22 +1094,18 @@ def setThermostatMode(String value) {
  //       }
         
         deviceScale = 0
-        deviceScaleString = "C"
+        deviceScaleString = "F"
         
         def locationScale = getTemperatureScale()
         log.debug "state.precision=${state.precision}"
         def p = (state.precision == null) ? 0 : state.precision
         log.debug "p=${p}"
         
-        def convertedDegrees = convertTempValueToCelsius(deviceScaleString, degrees)
-   
-        log.debug "convertedDegrees=${convertedDegrees}, degrees=${degrees}"
-
         // Report the new temperature being set
         log.debug "new temp ${degrees}"
-        log.debug("Sending Temp [$convertedDegrees] for $value mode before enabling mode")
+        log.debug("Sending Temp [$degrees] for $value mode before enabling mode")
         // Send the new temperature from the thermostat and request confirmation
-        commands << zwave.thermostatSetpointV2.thermostatSetpointSet(setpointType: setpointMode, scale: deviceScale, precision: p, scaledValue: convertedDegrees)
+        commands << zwave.thermostatSetpointV2.thermostatSetpointSet(setpointType: setpointMode, scale: deviceScale, precision: p, scaledValue: degrees)
         //secureCommands << zwave.securityV1.securityMessageEncapsulation().encapsulate(commands)
         log.debug ("Secure Command: ${commands}")
         commands << zwave.thermostatSetpointV2.thermostatSetpointGet(setpointType: setpointMode)
@@ -1125,13 +1118,6 @@ def setThermostatMode(String value) {
     // send the requests
     //delayBetween(commands, 2300)
 	delayBetween(commands.collect{ secure(it)}, 100)
-}
-
-def convertTempValueToCelsius(String fromScale, def fromValue) {
-    if ( fromScale == "F" ) {
-        return fahrenheitToCelsius(fromValue);
-    }
-    return fromValue;
 }
 
 // Set Thermostat Fan Mode
