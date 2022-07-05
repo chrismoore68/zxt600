@@ -1,4 +1,4 @@
-/**
+ /**
  *  
  *  ZXT-600 device handler for Samsung SmartThings Hub 
  *
@@ -823,10 +823,8 @@ def setCoolingSetpoint(degrees) {
 
 /*
 Based on ZXT-600 user manual (IR Learning Mapping Table, Parameter number 25)
-
 Parameter Value    |          Thermostat Command & IR Setting
 (Storage Location) | Storage in Celsius Unit | Storage in Fahrenheit Unit
-
 0| OFF | OFF
 1| ON (RESUME) | ON (RESUME)
 2| 17°C COOL | 63°F COOL
@@ -860,7 +858,6 @@ Parameter Value    |          Thermostat Command & IR Setting
 30| DRY MODE  |DRY MODE
 31| AUTO MODE | AUTO MODE
 32| FAN MODE | FAN MODE
-
 */
 def setLearningPosition(position) {
     log.debug "Setting learning postition: $position"
